@@ -26,11 +26,13 @@ const { Title, Text } = Typography
 interface UploadFile {
   uid: string
   name: string
-  status: "uploading" | "done" | "error" | "paused"
+  status: "uploading" | "done" | "error"
   percent: number
   size: number
   url?: string
   file?: File // 保存原始文件对象
+  // 添加自定义状态字段，因为Ant Design的UploadFileStatus不支持paused状态
+  customStatus?: "paused"
 }
 
 const UploadPage: React.FC = () => {
@@ -74,7 +76,8 @@ const UploadPage: React.FC = () => {
     const newFile: UploadFile = {
       uid: `file-${Date.now()}`,
       name: file.name,
-      status: "paused",
+      status: "error", // 使用error作为默认状态，因为Ant Design的UploadFileStatus不支持paused
+      customStatus: "paused", // 使用自定义字段保存paused状态
       percent: 0,
       size: file.size,
       file: file, // 保存原始文件对象
@@ -156,7 +159,9 @@ const UploadPage: React.FC = () => {
   const pauseUpload = (file: UploadFile) => {
     setFileList((prev) =>
       prev.map((item) =>
-        item.uid === file.uid ? { ...item, status: "paused" } : item
+        item.uid === file.uid
+          ? { ...item, status: "error", customStatus: "paused" }
+          : item
       )
     )
     message.info(`${file.name} 已暂停上传`)
@@ -172,8 +177,8 @@ const UploadPage: React.FC = () => {
   const uploadProps = {
     beforeUpload,
     fileList: fileList,
-    onRemove: (file: UploadFile) => {
-      deleteFile(file)
+    onRemove: (file: any) => {
+      deleteFile(file as UploadFile)
     },
     showUploadList: false,
   }
@@ -234,7 +239,7 @@ const UploadPage: React.FC = () => {
                       >
                         暂停
                       </Button>
-                    ) : file.status === "paused" ? (
+                    ) : file.customStatus === "paused" ? (
                       <Button
                         icon={<PlayCircleOutlined />}
                         size="small"
@@ -285,8 +290,10 @@ const UploadPage: React.FC = () => {
                         >
                           {file.status === "uploading" && "上传中..."}
                           {file.status === "done" && "上传完成"}
-                          {file.status === "error" && "上传失败"}
-                          {file.status === "paused" && "已暂停"}
+                          {file.status === "error" &&
+                            file.customStatus !== "paused" &&
+                            "上传失败"}
+                          {file.customStatus === "paused" && "已暂停"}
                         </Text>
                       </Space>
                     }
