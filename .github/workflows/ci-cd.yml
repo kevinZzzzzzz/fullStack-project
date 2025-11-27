@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./apps/frontend
+
+      - name: Run frontend lint
+        run: npm run lint
+        working-directory: ./apps/frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: ./apps/frontend
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: ./apps/backend
+
+      - name: Run backend lint
+        run: npm run lint
+        working-directory: ./apps/backend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: ./apps/backend
+
+      - name: Run backend tests
+        run: npm run test
+        working-directory: ./apps/backend
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: echo "Deploying to production..."
+        # 这里可以添加实际的部署命令，例如使用SSH部署到服务器
+        # 或者使用云服务提供商的部署工具

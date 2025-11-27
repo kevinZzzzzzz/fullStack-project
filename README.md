@@ -1,344 +1,163 @@
-# FullStack 项目文档
+# 全栈聊天应用
 
-## 项目简介
+这是一个全栈聊天应用，具有实时消息传递和文件上传功能。
 
-这是一个基于 monorepo 架构的全栈项目，包含前端 React + Ant Design 和后端 NestJS 两个子项目。项目实现了一个文件上传系统，支持图片上传、断点续传等功能。
+## CI/CD 流水线
 
-## 技术栈
+本项目使用 GitHub Actions 进行 CI/CD。CI/CD 流水线配置在 `.github/workflows/ci-cd.yml` 文件中。
 
-### 前端
-- React 18
-- TypeScript
-- Ant Design
-- React Router
-- Axios
-- Vite
+### CI/CD 工作原理
 
-### 后端
-- NestJS
-- TypeScript
-- Multer (文件上传)
-- Express
+1. **触发事件**：
+   - 每次推送到 `main` 分支时，流水线会运行
+   - 每次向 `main` 分支提交拉取请求时，流水线会运行
+
+2. **作业**：
+   - `build-and-test`：构建和测试前端和后端应用
+   - `deploy`：将应用部署到生产环境（仅在推送到 main 分支时运行）
+
+3. **build-and-test 作业步骤**：
+   - 检出代码
+   - 设置 Node.js
+   - 安装前端依赖
+   - 运行前端 lint
+   - 构建前端
+   - 安装后端依赖
+   - 运行后端 lint
+   - 构建后端
+   - 运行后端测试
+
+4. **deploy 作业步骤**：
+   - 检出代码
+   - 部署到生产环境（占位符，需要根据实际情况配置）
+
+### 如何查看 CI/CD 执行情况
+
+1. 进入您的 GitHub 仓库
+2. 点击 "Actions" 标签页
+3. 您将看到所有流水线运行的列表
+4. 点击某个流水线运行可查看详细日志
+5. 点击某个作业可查看步骤及其输出
+
+### 如何配置部署
+
+要配置实际部署，您需要修改 `.github/workflows/ci-cd.yml` 文件中的 `deploy` 作业。
+
+#### 选项 1：SSH 部署
+
+```yaml
+- name: 通过 SSH 部署到生产环境
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.SERVER_HOST }}
+    username: ${{ secrets.SERVER_USERNAME }}
+    key: ${{ secrets.SERVER_SSH_KEY }}
+    script: |
+      cd /path/to/your/app
+      git pull origin main
+      # 安装依赖并构建
+      npm install
+      npm run build
+      # 重启应用
+      pm2 restart app
+```
+
+#### 选项 2：Docker 部署
+
+```yaml
+- name: 构建并推送 Docker 镜像
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: true
+    tags: your-dockerhub-username/your-image-name:latest
+
+- name: 部署到 Docker Swarm
+  run: |
+    docker stack deploy -c docker-compose.yml your-app-name
+```
+
+#### 选项 3：云服务部署
+
+```yaml
+- name: 部署到 AWS S3
+  uses: jakejarvis/s3-sync-action@master
+  with:
+    args: --acl public-read --follow-symlinks --delete
+  env:
+    AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_REGION: ${{ secrets.AWS_REGION }}
+    SOURCE_DIR: ./apps/frontend/build
+```
+
+### 如何测试 CI/CD
+
+1. 对代码进行一些修改
+2. 将修改推送到 `main` 分支
+3. 进入 GitHub 仓库的 "Actions" 标签页
+4. 您将看到一个新的流水线运行正在启动
+5. 等待流水线完成
+6. 检查日志以查看是否一切通过
+
+### 所需的 GitHub Secrets
+
+您需要在 GitHub 仓库设置中添加以下 Secrets：
+
+- 对于 SSH 部署：
+  - `SERVER_HOST`：您的服务器 IP 地址或域名
+  - `SERVER_USERNAME`：您的服务器用户名
+  - `SERVER_SSH_KEY`：您的服务器 SSH 私钥
+
+- 对于 Docker 部署：
+  - `DOCKER_HUB_USERNAME`：您的 Docker Hub 用户名
+  - `DOCKER_HUB_PASSWORD`：您的 Docker Hub 密码或访问令牌
+
+- 对于 AWS 部署：
+  - `AWS_S3_BUCKET`：您的 AWS S3 桶名称
+  - `AWS_ACCESS_KEY_ID`：您的 AWS 访问密钥 ID
+  - `AWS_SECRET_ACCESS_KEY`：您的 AWS 秘密访问密钥
+  - `AWS_REGION`：您的 AWS 区域
 
 ## 项目结构
 
 ```
 fullStack/
 ├── apps/
-│   ├── frontend/          # 前端 React 项目
-│   │   ├── src/
-│   │   │   ├── assets/    # 静态资源
-│   │   │   ├── pages/     # 页面组件
-│   │   │   │   ├── HomePage.tsx      # 首页菜单
-│   │   │   │   └── UploadPage.tsx     # 上传页面
-│   │   │   ├── styles/    # 样式文件
-│   │   │   ├── App.tsx    # 应用根组件
-│   │   │   └── main.tsx   # 应用入口
-│   │   ├── package.json
-│   │   └── vite.config.ts
-│   └── backend/           # 后端 NestJS 项目
-│       ├── src/
-│       │   ├── upload/    # 上传模块
-│       │   │   ├── upload.controller.ts   # 上传控制器
-│       │   │   ├── upload.module.ts       # 上传模块
-│       │   │   └── upload.service.ts      # 上传服务
-│       │   ├── app.module.ts   # 应用根模块
-│       │   └── main.ts         # 应用入口
-│       ├── uploads/       # 上传文件存储目录
-│       ├── package.json
-│       └── nest-cli.json
-├── package.json
-└── pnpm-workspace.yaml    # monorepo 配置
+│   ├── backend/          # NestJS 后端
+│   └── frontend/         # React 前端
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml     # CI/CD 配置
+├── docker-compose.yml    # Docker Compose 配置
+└── package.json          # 根目录 package.json
 ```
 
-## 功能说明
+## 快速开始
 
-### 首页菜单
-- 使用 Grid 布局，每行 8 个菜单
-- 每个菜单包含图标和文字
-- 支持悬停效果和动画
-- 响应式设计，适配不同屏幕尺寸
+### 前提条件
 
-### 文件上传
-- 支持图片上传，单文件最大 100MB
-- 实时显示上传进度
-- 支持暂停/继续上传
-- 支持删除文件
-- 上传列表展示
-- 断点续传支持
+- Node.js 18.x 或更高版本
+- npm 或 pnpm
 
-## 启动方式
+### 安装
 
-### 后端启动
-
-1. 进入后端目录：
-```bash
-cd apps/backend
-```
-
+1. 克隆仓库
 2. 安装依赖：
-```bash
-npm install
-```
-
+   ```
+   npm install
+   ```
 3. 启动开发服务器：
-```bash
-npm run start:dev
-```
-
-后端服务将运行在 http://localhost:3000
-
-### 前端启动
-
-1. 进入前端目录：
-```bash
-cd apps/frontend
-```
-
-2. 安装依赖：
-```bash
-npm install
-```
-
-3. 启动开发服务器：
-```bash
-npm run dev
-```
-
-前端服务将运行在 http://localhost:5173
-
-## 开发指南
-
-### 前端开发
-
-1. 页面组件位于 `src/pages/` 目录
-2. 样式文件位于 `src/styles/` 目录
-3. 使用 Ant Design 组件库
-4. 使用 React Router 进行路由管理
-
-### 后端开发
-
-1. 模块开发遵循 NestJS 模块化架构
-2. 上传功能主要在 `src/upload/` 目录
-3. 配置文件位于 `src/main.ts`
-
-## 构建说明
-
-### 前端构建
-
-```bash
-cd apps/frontend
-npm run build
-```
-
-构建产物将生成在 `dist/` 目录
-
-### 后端构建
-
-```bash
-cd apps/backend
-npm run build
-```
-
-构建产物将生成在 `dist/` 目录
-
-## API 接口
-
-### 文件上传
-
-- **URL**: `/api/upload`
-- **Method**: `POST`
-- **Content-Type**: `multipart/form-data`
-- **Body**: 
-  - `file`: 要上传的文件
-- **Response**: 
-  ```json
-  {
-    "message": "文件上传成功",
-    "filename": "file-1234567890-1234567890.jpg",
-    "originalname": "example.jpg",
-    "size": 102400,
-    "mimetype": "image/jpeg",
-    "url": "http://localhost:3000/uploads/file-1234567890-1234567890.jpg"
-  }
-  ```
-
-### 获取文件信息
-
-- **URL**: `/api/upload/:filename`
-- **Method**: `GET`
-- **Response**: 
-  ```json
-  {
-    "exists": true,
-    "size": 102400
-  }
-  ```
-
-### 上传文件块
-
-- **URL**: `/api/upload/chunk`
-- **Method**: `POST`
-- **Response**: 
-  ```json
-  {
-    "message": "文件块上传成功"
-  }
-  ```
-
-## 注意事项
-
-1. 上传的文件将存储在后端的 `uploads/` 目录
-2. 支持的图片格式：JPG、PNG、GIF 等
-3. 单文件最大限制：100MB
-4. 后端服务需要先启动，前端才能正常访问 API
-5. 开发环境下，前端通过 http://localhost:5173 访问，后端通过 http://localhost:3000 访问
-
-## 部署指南
-
-### 部署前准备
-
-1. 确保服务器已安装 Node.js 18+ 和 npm
-2. 确保服务器已安装 Git
-3. 准备好数据库（如果需要）
-4. 配置好域名和 SSL 证书（可选，用于生产环境）
-
-### 前端部署
-
-1. 克隆代码仓库：
-```bash
-git clone <repository-url>
-cd fullStack/apps/frontend
-```
-
-2. 安装依赖：
-```bash
-npm install
-```
-
-3. 构建项目：
-```bash
-npm run build
-```
-
-4. 部署构建产物：
-   - 将 `dist/` 目录下的所有文件复制到 Web 服务器的静态文件目录（如 Nginx 的 `html/` 目录）
-   - 或者使用静态文件托管服务（如 Vercel、Netlify 等）
-
-### 后端部署
-
-1. 克隆代码仓库：
-```bash
-git clone <repository-url>
-cd fullStack/apps/backend
-```
-
-2. 安装依赖：
-```bash
-npm install
-```
-
-3. 构建项目：
-```bash
-npm run build
-```
-
-4. 配置环境变量（可选）：
-   - 创建 `.env` 文件，配置端口、数据库连接等信息
-   - 例如：
-     ```
-     PORT=3000
-     NODE_ENV=production
-     ```
-
-5. 启动服务：
-   - 使用 PM2 管理进程（推荐）：
-     ```bash
-     npm install -g pm2
-     pm2 start dist/main.js --name fullstack-backend
-     pm2 save
-     pm2 startup
-     ```
-   - 或者直接启动：
-     ```bash
-     npm run start:prod
-     ```
-
-### Nginx 配置（可选）
-
-如果使用 Nginx 作为反向代理，可以参考以下配置：
-
-```nginx
-# 前端配置
-server {
-    listen 80;
-    server_name frontend.example.com;
-    root /path/to/frontend/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-
-# 后端配置
-server {
-    listen 80;
-    server_name backend.example.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # 静态文件访问
-    location /uploads/ {
-        alias /path/to/backend/uploads/;
-        expires 30d;
-    }
-}
-```
-
-### 环境变量配置
-
-#### 前端环境变量
-
-在前端项目根目录创建 `.env` 文件：
-
-```
-VITE_API_URL=http://localhost:3000/api
-```
-
-#### 后端环境变量
-
-在后端项目根目录创建 `.env` 文件：
-
-```
-PORT=3000
-NODE_ENV=production
-UPLOAD_DIR=./uploads
-```
-
-### 常见问题及解决方案
-
-1. **前端无法访问后端 API**
-   - 检查后端服务是否正常运行
-   - 检查 CORS 配置是否正确
-   - 检查前端 API URL 配置是否正确
-
-2. **文件上传失败**
-   - 检查上传目录权限是否正确
-   - 检查文件大小限制是否设置正确
-   - 检查 Multer 配置是否正确
-
-3. **服务启动失败**
-   - 检查端口是否被占用
-   - 检查环境变量配置是否正确
-   - 检查依赖是否安装完整
+   ```
+   # 启动前端
+   cd apps/frontend
+   npm run dev
+   
+   # 启动后端
+   cd apps/backend
+   npm run start:dev
+   ```
 
 ## 许可证
 
