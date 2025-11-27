@@ -9,6 +9,7 @@ import {
   message,
   List,
   Space,
+  type UploadFile as AntdUploadFile,
 } from "antd"
 import {
   UploadOutlined,
@@ -177,8 +178,8 @@ const UploadPage: React.FC = () => {
   const uploadProps = {
     beforeUpload,
     fileList: fileList,
-    onRemove: (file: any) => {
-      deleteFile(file as UploadFile)
+    onRemove: (file: AntdUploadFile) => {
+      deleteFile(file as unknown as UploadFile)
     },
     showUploadList: false,
   }

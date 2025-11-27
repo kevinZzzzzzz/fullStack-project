@@ -13,8 +13,12 @@ import { extname, join } from 'path';
         destination: join(__dirname, '../../uploads'),
         // 生成唯一文件名
         filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          callback(null, `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          callback(
+            null,
+            `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`,
+          );
         },
       }),
       // 文件大小限制：100MB

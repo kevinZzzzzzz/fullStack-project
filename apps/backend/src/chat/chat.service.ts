@@ -69,12 +69,23 @@ export class ChatService {
     try {
       // 读取聊天记录文件
       const data = readFileSync(this.CHAT_FILE, 'utf-8');
-      // 解析JSON数据
-      const messages = JSON.parse(data);
+      // 解析JSON数据并添加类型断言
+      const messages = JSON.parse(data) as Array<{
+        id: string;
+        content: string;
+        sender: {
+          id: string;
+          name: string;
+          avatar: string;
+          gender: 'male' | 'female';
+        };
+        receiver: string;
+        timestamp: string | number | Date;
+      }>;
       // 转换时间戳为Date对象
-      this.messages = messages.map((msg: any) => ({
+      this.messages = messages.map(msg => ({
         ...msg,
-        timestamp: new Date(msg.timestamp)
+        timestamp: new Date(msg.timestamp),
       }));
       console.log(`已加载 ${this.messages.length} 条历史消息`);
     } catch (error) {

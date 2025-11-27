@@ -9,7 +9,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
-import { Message, User } from './chat.service';
 
 // 消息类型
 type MessageType = {
@@ -73,7 +72,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('register')
   handleRegister(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: any,
+    @MessageBody()
+    payload: { name: string; avatar: string; gender: 'male' | 'female' },
   ) {
     console.log(`用户注册: ${payload.name}, socketId: ${client.id}`);
     // 添加用户
@@ -129,10 +129,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * 处理客户端获取在线用户列表
-   * @param client WebSocket客户端
    */
   @SubscribeMessage('get-users')
-  handleGetUsers(@ConnectedSocket() client: Socket) {
+  handleGetUsers() {
     // 获取所有在线用户
     const users = this.chatService.getAllUsers();
     // 返回在线用户列表
