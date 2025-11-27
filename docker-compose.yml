@@ -1,0 +1,37 @@
+# Docker Compose配置文件
+version: '3.8'
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/backend/uploads:/app/uploads  # 挂载uploads目录，持久化存储上传的文件
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: always
+    networks:
+      - fullstack-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - fullstack-network
+
+# 网络配置
+networks:
+  fullstack-network:
+    driver: bridge

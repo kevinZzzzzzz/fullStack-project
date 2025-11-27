@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <title>Localhost WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            margin-top: 20px;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .info {
+            color: blue;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Localhost WebSocket 测试</h1>
+    <div>
+        <button onclick="connect()">连接到 localhost:3000</button>
+        <button onclick="disconnect()">断开连接</button>
+        <button onclick="sendMessage()">发送测试消息</button>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        const logElement = document.getElementById('log');
+        let socket = null;
+
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function connect() {
+            log('正在连接到 ws://localhost:3000...');
+
+            socket = io('http://localhost:3000');
+
+            socket.on('connect', () => {
+                log('连接成功！', 'success');
+                log(`Socket ID: ${socket.id}`, 'success');
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`连接错误: ${error.message}`, 'error');
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`连接断开: ${reason}`, 'info');
+            });
+
+            socket.on('new-message', (message) => {
+                log(`收到消息: ${message.content}`, 'success');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                log('已断开连接', 'info');
+            }
+        }
+
+        function sendMessage() {
+            if (socket && socket.connected) {
+                socket.emit('send-message', {
+                    content: '测试消息',
+                    sender: {
+                        id: 'test',
+                        name: '测试用户',
+                        avatar: 'https://via.placeholder.com/40',
+                        gender: 'male'
+                    },
+                    receiver: 'all'
+                });
+                log('已发送测试消息', 'info');
+            } else {
+                log('未连接，无法发送消息', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

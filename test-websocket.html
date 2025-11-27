@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .log {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .log-entry.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .log-entry.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-entry.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        button.connect {
+            background-color: #28a745;
+            color: white;
+        }
+
+        button.disconnect {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        button.send {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>WebSocket测试</h1>
+        <div>
+            <button class="connect" onclick="connect()">连接</button>
+            <button class="disconnect" onclick="disconnect()">断开连接</button>
+            <button class="send" onclick="sendMessage()">发送消息</button>
+        </div>
+        <div>
+            <input type="text" id="message" placeholder="输入消息" style="width: 300px; margin: 10px 0;">
+        </div>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        const logElement = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function connect() {
+            log('开始连接WebSocket...');
+
+            // 测试HTTP连接
+            fetch('http://localhost:3000')
+                .then(response => {
+                    log(`HTTP连接测试成功，状态码: ${response.status}`, 'success');
+                })
+                .catch(error => {
+                    log(`HTTP连接测试失败: ${error.message}`, 'error');
+                });
+
+            // 创建WebSocket连接
+            socket = io('http://localhost:3000', {
+                transports: ['polling', 'websocket'],
+                timeout: 15000,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                debug: true
+            });
+
+            socket.on('connect', () => {
+                log(`WebSocket连接成功，socketId: ${socket.id}`, 'success');
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`WebSocket连接错误: ${error.message}`, 'error');
+                log(`错误类型: ${error.type}`, 'error');
+                log(`错误代码: ${error.code}`, 'error');
+                log(`错误堆栈: ${error.stack}`, 'error');
+            });
+
+            socket.on('connect_timeout', () => {
+                log('WebSocket连接超时', 'error');
+            });
+
+            socket.on('reconnect_attempt', (attemptNumber) => {
+                log(`WebSocket重连尝试: ${attemptNumber}`, 'info');
+            });
+
+            socket.on('reconnect', (attemptNumber) => {
+                log(`WebSocket重连成功，尝试次数: ${attemptNumber}`, 'success');
+            });
+
+            socket.on('reconnect_failed', () => {
+                log('WebSocket重连失败', 'error');
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`WebSocket断开连接: ${reason}`, 'info');
+            });
+
+            socket.on('new-message', (message) => {
+                log(`收到新消息: ${JSON.stringify(message)}`, 'success');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('WebSocket已断开连接', 'info');
+            }
+        }
+
+        function sendMessage() {
+            if (socket && socket.connected) {
+                const messageInput = document.getElementById('message');
+                const message = messageInput.value;
+                if (message) {
+                    socket.emit('send-message', {
+                        content: message,
+                        sender: {
+                            id: 'test-user',
+                            name: '测试用户',
+                            avatar: 'https://via.placeholder.com/40/4A90E2/FFFFFF?text=U',
+                            gender: 'male'
+                        },
+                        receiver: 'all'
+                    });
+                    log(`发送消息: ${message}`, 'info');
+                    messageInput.value = '';
+                }
+            } else {
+                log('WebSocket未连接，无法发送消息', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

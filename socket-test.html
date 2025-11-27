@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+
+<body>
+    <h1>Socket.io 测试页面</h1>
+    <div id="log"></div>
+
+    <script>
+        const logElement = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        log('正在连接到 WebSocket 服务器...');
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            log(`连接成功！Socket ID: ${socket.id}`, 'success');
+
+            // 注册用户
+            log('正在注册用户...');
+            socket.emit('register', {
+                id: 'test-user',
+                name: '测试用户',
+                avatar: 'https://via.placeholder.com/40',
+                gender: 'male'
+            });
+
+            // 发送消息
+            setTimeout(() => {
+                log('正在发送测试消息...');
+                socket.emit('send-message', {
+                    content: '你好，Socket.io！',
+                    sender: {
+                        id: 'test-user',
+                        name: '测试用户',
+                        avatar: 'https://via.placeholder.com/40',
+                        gender: 'male'
+                    },
+                    receiver: 'all'
+                });
+            }, 1000);
+        });
+
+        socket.on('new-message', (message) => {
+            log(`收到新消息: ${message.content} (发送者: ${message.sender.name})`, 'message');
+        });
+
+        socket.on('register-response', (users) => {
+            log(`在线用户列表 (共 ${users.length} 人):`, 'info');
+            users.forEach(user => {
+                log(`- ${user.name} (${user.id})`, 'info');
+            });
+        });
+
+        socket.on('user-connected', (user) => {
+            log(`${user.name} 加入了聊天室`, 'success');
+        });
+
+        socket.on('user-disconnected', (data) => {
+            log(`用户已离开聊天室`, 'warning');
+        });
+
+        socket.on('connect_error', (error) => {
+            log(`连接错误: ${error.message}`, 'error');
+        });
+
+        socket.on('disconnect', (reason) => {
+            log(`连接断开: ${reason}`, 'warning');
+        });
+
+        // 添加样式
+        const style = document.createElement('style');
+        style.textContent = `
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            #log {
+                border: 1px solid #ccc;
+                padding: 10px;
+                height: 300px;
+                overflow-y: scroll;
+                margin-top: 20px;
+            }
+            .log-entry {
+                margin: 5px 0;
+                padding: 5px;
+                border-radius: 3px;
+            }
+            .log-entry.success {
+                background-color: #d4edda;
+                color: #155724;
+            }
+            .log-entry.error {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            .log-entry.warning {
+                background-color: #fff3cd;
+                color: #856404;
+            }
+            .log-entry.info {
+                background-color: #d1ecf1;
+                color: #0c5460;
+            }
+            .log-entry.message {
+                background-color: #e2e3e5;
+                color: #383d41;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>
