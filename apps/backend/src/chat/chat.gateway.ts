@@ -79,6 +79,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 添加用户
     this.chatService.addUser(client.id, {
       ...payload,
+      id: client.id,
       socketId: client.id,
     });
     // 广播用户加入消息
