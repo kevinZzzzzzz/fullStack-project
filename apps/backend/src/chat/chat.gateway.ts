@@ -64,6 +64,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.emit('user-disconnected', { socketId: client.id });
   }
 
+  
   /**
    * 处理客户端注册用户信息
    * @param client WebSocket客户端
