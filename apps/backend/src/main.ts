@@ -4,7 +4,7 @@ import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ServerOptions } from 'socket.io';
-import * as express from 'express';
+import { Server } from 'http';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -24,16 +24,15 @@ async function bootstrap() {
 
   // 配置WebSocket适配器，显式设置Socket.io路径
   class SocketAdapter extends IoAdapter {
-    constructor(app: any) {
+    constructor(app: NestExpressApplication) {
       super(app);
     }
 
-    createIOServer(port: number, options?: ServerOptions) {
-      const server = super.createIOServer(port, {
+    createIOServer(port: number, options?: ServerOptions): Server {
+      return super.createIOServer(port, {
         ...options,
         path: '/socket.io', // 显式设置Socket.io路径
-      });
-      return server;
+      }) as Server;
     }
   }
 
@@ -42,4 +41,7 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
   console.log('Server running on http://localhost:3000');
 }
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('启动服务器失败:', error);
+  process.exit(1);
+});

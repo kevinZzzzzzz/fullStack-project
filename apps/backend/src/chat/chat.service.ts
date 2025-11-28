@@ -83,7 +83,7 @@ export class ChatService {
         timestamp: string | number | Date;
       }>;
       // 转换时间戳为Date对象
-      this.messages = messages.map(msg => ({
+      this.messages = messages.map((msg) => ({
         ...msg,
         timestamp: new Date(msg.timestamp),
       }));

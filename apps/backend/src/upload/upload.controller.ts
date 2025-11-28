@@ -12,6 +12,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import type { Response, Request } from 'express';
 import { join } from 'path';
+import { existsSync, statSync } from 'fs';
+
+interface UploadedFileDto {
+  filename: string;
+  originalname: string;
+  size: number;
+  mimetype: string;
+}
 
 @Controller('api')
 export class UploadController {
@@ -23,7 +31,7 @@ export class UploadController {
   // 处理文件上传
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  uploadFile(@UploadedFile() file: any) {
+  uploadFile(@UploadedFile() file: UploadedFileDto) {
     if (!file) {
       return { message: '没有文件被上传' };
     }
@@ -41,13 +49,12 @@ export class UploadController {
 
   // 断点续传支持 - 获取文件信息
   @Get('upload/:filename')
-  async getFileInfo(@Param('filename') filename: string, @Res() res: Response) {
+  getFileInfo(@Param('filename') filename: string, @Res() res: Response) {
     const filePath = join(__dirname, '../../uploads', filename);
     try {
       // 检查文件是否存在
-      const fs = require('fs');
-      if (fs.existsSync(filePath)) {
-        const stats = fs.statSync(filePath);
+      if (existsSync(filePath)) {
+        const stats = statSync(filePath);
         return res.json({
           exists: true,
           size: stats.size,
@@ -61,14 +68,14 @@ export class UploadController {
     } catch (error) {
       return res.status(500).json({
         message: '获取文件信息失败',
-        error: error.message,
+        error: (error as Error).message,
       });
     }
   }
 
   // 断点续传支持 - 上传文件块
   @Post('upload/chunk')
-  async uploadChunk(@Req() req: Request, @Res() res: Response) {
+  uploadChunk(@Req() req: Request, @Res() res: Response) {
     try {
       // 这里可以实现断点续传的逻辑
       // 例如：接收文件块，合并文件等
@@ -78,7 +85,7 @@ export class UploadController {
     } catch (error) {
       return res.status(500).json({
         message: '文件块上传失败',
-        error: error.message,
+        error: (error as Error).message,
       });
     }
   }
