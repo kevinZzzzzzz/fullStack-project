@@ -1,21 +1,21 @@
 {
-  "name": "three-hand-particles",
+  "name": "",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mediapipe/camera_utils": "^0.3.1675466862",
-    "@mediapipe/hands": "^0.4.1675469240",
-    "three": "^0.170.0"
+    "react-dom": "^19.2.1",
+    "react": "^19.2.1"
   },
   "devDependencies": {
-    "@types/three": "^0.170.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }
