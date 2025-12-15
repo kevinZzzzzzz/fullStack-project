@@ -17,7 +17,6 @@ declare global {
   }
 }
 
-
 // 粒子数量常量
 const PARTICLE_COUNT = 3000;        // 手部粒子数量
 const BG_PARTICLE_COUNT = 1500;     // 背景粒子数量
